@@ -1,25 +1,25 @@
-import { CircleArrowDown, CircleArrowUp} from 'lucide-react'
-import React from 'react'
+import { CircleArrowUp, CircleArrowDown } from "lucide-react";
+import React from "react";
 
-const Card = ({type, color}) => {
+const Card = ({ transaction }) => {
+  const { description, amount, date, type, category } = transaction;
+  const color = type === "ingreso" ? "rose" : "violet";
+
   return (
-      <li className="p-2 bg-stone-900 text-white rounded flex justify-between lg:w-5/10">
-        <div>
-          <p className={`flex text-2xl font-bold text-${color}-400 items-center gap-3`}>
-            {type=="ingreso"?(<CircleArrowUp size={35} strokeWidth={3}/>):
-            (<CircleArrowDown size={35} strokeWidth={3} />)}
-            
-            Descripcion
-          </p>
-
-          <p className="text-sm text-slate-300">Categoria</p>
-        </div>
-        <div>
-          <p className={`text-xl font-bold text-${color}-400 text-end`}>$1000</p>
-          <p className="text-sm">05/06/2025</p>
-        </div>
-      </li>
-  )
-}
+    <li className={`p-4 bg-white shadow rounded flex justify-between items-center w-full max-w-xl border-l-8 border-${color}-600`}>
+      <div>
+        <p className={`flex text-lg font-bold text-${color}-600 items-center gap-2`}>
+          {type === "ingreso" ? <CircleArrowUp size={28} strokeWidth={3} /> : <CircleArrowDown size={28} strokeWidth={3} />}
+          {description}
+        </p>
+        <p className="text-sm text-slate-600">Categoría: {category?.name || "Sin categoría"}</p>
+      </div>
+      <div className="text-end">
+        <p className={`text-lg font-bold text-${color}-600`}>${amount}</p>
+        <p className="text-sm text-slate-500">{new Date(date).toLocaleDateString()}</p>
+      </div>
+    </li>
+  );
+};
 
 export default Card;

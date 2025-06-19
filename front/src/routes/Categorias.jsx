@@ -1,84 +1,92 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Blocks } from "lucide-react";
+import { fetchCategorias, agregarCategoria } from "../js/categoryApi";
 
 const Categorias = () => {
   const [categorias, setCategorias] = useState([]);
-  const [nombreCategoria, setNombreCategoria] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [error, setError] = useState("");
 
-  // Obtener categorías al montar el componente
-  useEffect(() => {
-    fetch("http://localhost:3001/category", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al obtener categorías");
-        return res.json();
-      })
-      .then((data) => setCategorias(data))
-      .catch((err) => console.error(err));
+  // Cargar categorías del backend
+  const cargarCategorias = useCallback(async () => {
+    try {
+      const data = await fetchCategorias();
+      setCategorias(data);
+    } catch {
+      setError("Error al cargar categorías.");
+    }
   }, []);
 
-  // Enviar nueva categoría
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Verificar token y cargar categorías al montar
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Debes iniciar sesión.");
+      window.location.href = "/";
+      return;
+    }
+    cargarCategorias();
+  }, [cargarCategorias]);
 
-    fetch("http://localhost:3001/category", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({ name: nombreCategoria }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al agregar categoría");
-        return res.json();
-      })
-      .then((data) => {
-        setCategorias((prev) => [...prev, data]); // Agrega la nueva categoría
-        setNombreCategoria(""); // Limpia el input
-      })
-      .catch((err) => console.error(err));
+  // Manejar envío del formulario
+  const manejarSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!nombre.trim()) {
+      setError("El nombre no puede estar vacío.");
+      return;
+    }
+
+    try {
+      await agregarCategoria(nombre.trim());
+      setNombre("");
+      await cargarCategorias();
+    } catch (err) {
+      setError(err.message || "Error al agregar categoría.");
+    }
   };
 
   return (
-    <section className="w-full h-full p-4">
-      <form className="w-full flex flex-col items-center" onSubmit={handleSubmit}>
-        <h1 className="text-3xl flex gap-3 items-center">
-          Categorías <Blocks />
-        </h1>
+    <section className="max-w-lg mx-auto p-6 bg-white rounded shadow-md">
+      <header className="flex items-center gap-3 mb-6 text-2xl font-semibold text-rose-600">
+        <Blocks size={28} />
+        Categorías
+      </header>
 
-        <div className="flex flex-col">
-          <label className="font-bold text-slate-700">Nombre</label>
-          <input
-            type="text"
-            placeholder="gastos de casa ...."
-            required
-            value={nombreCategoria}
-            onChange={(e) => setNombreCategoria(e.target.value)}
-            className="focus:outline-none border border-2 border-slate-400 rounded px-2"
-          />
-        </div>
+      <form onSubmit={manejarSubmit} className="flex flex-col gap-4">
+        <label className="text-gray-700 font-medium" htmlFor="categoriaInput">
+          Nombre de la categoría
+        </label>
+        <input
+          id="categoriaInput"
+          type="text"
+          placeholder="Ej. Gastos de casa..."
+          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          required
+        />
 
-        <div className="flex w-3/10 justify-end">
-          <button
-            type="submit"
-            className="mt-2 bg-emerald-600 text-white px-4 py-1 rounded hover:bg-emerald-800"
-          >
-            Agregar
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="self-end bg-rose-600 text-white px-5 py-2 rounded hover:bg-rose-700 transition"
+        >
+          Agregar
+        </button>
+
+        {error && (
+          <p className="text-red-500 text-sm font-semibold mt-1">{error}</p>
+        )}
       </form>
 
-      <ul className="w-7/10 mx-auto mt-3">
-        {categorias.map((categoria, index) => (
+      <ul className="mt-8 space-y-3">
+        {categorias.map((cat) => (
           <li
-            key={index}
-            className="my-1 shadow-lg ps-3 text-2xl hover:scale-x-110 transition duration-500 bg-white font-bold text-slate-600 rounded"
+            key={cat._id || cat.name}
+            className="bg-rose-50 text-rose-700 font-semibold rounded shadow px-4 py-2 hover:bg-rose-100 transition"
           >
-            {categoria.name}
+            {cat.name}
           </li>
         ))}
       </ul>

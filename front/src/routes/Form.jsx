@@ -1,64 +1,100 @@
 import { useState } from "react";
 import InputForm from "../components/InputForm";
 import Button from "../components/Button";
-import { login, register } from "./js/formularioLogin";
+import { login, register } from "../js/formularioLogin";
 
 const Form = ({ ruta }) => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleInputChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
+  const toggleForm = () => {
+    setIsRegister((prev) => !prev);
+    setErrorMsg("");
+  };
+
+  const handleRegister = async () => {
+    const res = await register(formData.email, formData.password);
+    if (res) {
+      alert("Registro exitoso. Ahora inicia sesión.");
+      setIsRegister(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    const res = await login(formData.email, formData.password);
+    if (res?.token) {
+      ruta("/dashboard");
+    } else {
+      setErrorMsg("Credenciales inválidas. Verifica tu email y contraseña.");
+    }
+  };
 
   const manejarFormulario = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+
     if (isRegister) {
-      await register(email, password);
-      setIsRegister(false);
+      await handleRegister();
     } else {
-      const success = await login(email, password);
-      if (success) {
-        ruta("/dashboard");
-      }
+      await handleLogin();
     }
   };
 
   return (
     <form
       onSubmit={manejarFormulario}
-      className="shadow-lg p-4 rounded bg-gray-700 flex flex-col items-center gap-5"
+      className="w-full max-w-md mx-auto my-10 px-8 py-6 bg-gray-900 rounded-2xl shadow-2xl text-white flex flex-col gap-6 transition-all duration-300"
     >
-      <h1 className="text-emerald-200 text-3xl text-center font-bold">
-        {isRegister ? "Registrate." : "Iniciar Sesión"}
+      <h1 className="text-cyan-400 text-4xl font-extrabold text-center">
+        {isRegister ? "Crea tu cuenta" : "Iniciar Sesión"}
       </h1>
 
-      <p className="text-xs">
-        {isRegister ? "Ya tienes una cuenta." : "¿Aun no te registras?."}
+      <p className="text-sm text-gray-300 text-center">
+        {isRegister ? "¿Ya tienes una cuenta?" : "¿No tienes una cuenta?"}{" "}
         <span
-          className="text-emerald-300 cursor-pointer"
-          onClick={() => setIsRegister(!isRegister)}
+          className="text-cyan-300 hover:text-cyan-200 underline cursor-pointer transition"
+          onClick={toggleForm}
         >
-          {" "}
-          Da click aqui.
+          Haz clic aquí
         </span>
       </p>
 
-      <div className="text-white bg-gray-600 rouned shadow w-full h-auto flex flex-col p-4 gap-2">
-        <label>Email: </label>
-        <InputForm
-          evt={(e) => setEmail(e.target.value)}
-          type={"email"}
-          placeHolder={"correo@ejemplo.com"}
-          isRequired={true}
-          value={email}
-        />
-        <label>Password</label>
-        <InputForm
-          evt={(e) => setPassword(e.target.value)}
-          type={"password"}
-          placeHolder={""}
-          isRequired={true}
-          value={password}
-        />
-        <Button text={isRegister ? "Crear Cuenta" : "Ingresar"} />
+      {errorMsg && (
+        <div className="bg-red-500/10 text-red-400 p-3 rounded-md text-center text-sm">
+          {errorMsg}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">Correo electrónico</label>
+          <InputForm
+            evt={handleInputChange("email")}
+            type="email"
+            placeHolder="correo@ejemplo.com"
+            isRequired={true}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-300 mb-1">Contraseña</label>
+          <InputForm
+            evt={handleInputChange("password")}
+            type="password"
+            placeHolder="*******"
+            isRequired={true}
+          />
+        </div>
+
+        <Button text={isRegister ? "Registrarse" : "Iniciar sesión"} />
       </div>
     </form>
   );
